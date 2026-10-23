@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMJ SOLUCIONES - Control de Ingresos y Facturación</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: '#0c1527',
+                        brandBlue: '#13213e',
+                        brandPink: '#e6007e',
+                        brandMagenta: '#ff007f',
+                        brandYellow: '#ffcc00',
+                        brandCyan: '#00d2ff',
+                        brandGreen: '#25D366'
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b111e;
+            color: #f3f4f6;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* 3x3 Pattern Lock Styling */
+        .pattern-dot {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: #1f293d;
+            border: 3px solid #374151;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .pattern-dot.selected {
+            background-color: #e6007e;
+            border-color: #ffcc00;
+            color: white;
+            box-shadow: 0 0 12px rgba(230, 0, 126, 0.7);
+            transform: scale(1.08);
+        }
+
+        /* DEFAULT PRINTABLE CONTAINER (Hidden on Screen) */
+        #printArea {
+            display: none;
+        }
+
+        /* FULL COLOR PRINT & PDF STYLING RULES */
+        @media print {
+            @page {
+                size: portrait;
+                margin: 6mm;
+            }
+
+            /* FORCE FULL COLOR IN PRINT & PDF GENERATION */
+            *, *::before, *::after {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            /* Hide all screen app interfaces */
+            html, body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
+            header, main, footer, .no-print, #cobroModal, #invoiceModal {
+                display: none !important;
+            }
+
+            /* Display ONLY the vibrant colored print document */
+            #printArea {
+                display: block !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background-color: #ffffff !important;
+                font-size: 11px !important;
+                line-height: 1.3 !important;
+                visibility: visible !important;
+                box-sizing: border-box !important;
+            }
+
+            #printArea * {
+                visibility: visible !important;
+            }
+
+            /* Printable Pattern Grid Dots (Color Version) */
+            .p-dot {
+                width: 22px !important;
+                height: 22px !important;
+                border-radius: 50% !important;
+                border: 2px solid #374151 !important;
+                background-color: #f1f5f9 !important;
+                font-size: 9px !important;
+                font-weight: bold !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                color: #4b5563 !important;
+            }
+
+            .p-dot.selected {
+                background-color: #e6007e !important;
+                border-color: #ffcc00 !important;
+                color: #ffffff !important;
+                box-shadow: 0 0 4px rgba(230,0,126,0.6) !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-brandPink selection:text-white">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-brandNavy via-brandBlue to-brandNavy border-b-4 border-brandPink sticky top-0 z-40 shadow-2xl no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo Brand Display -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('tab-nuevo')">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brandMagenta via-purple-600 to-brandCyan p-0.5 shadow-lg shadow-pink-500/20">
+                    <div class="w-full h-full bg-brandNavy rounded-[10px] flex items-center justify-center">
+                        <span class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brandYellow via-pink-400 to-brandCyan">DMJ</span>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-black italic tracking-wider text-white leading-none">
+                        DMJ <span class="text-brandYellow drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">SOLUCIONES</span>
+                    </h1>
+                    <p class="text-xs text-brandCyan font-semibold tracking-wide uppercase">Tecnología que soluciona, servicio que confía</p>
+                </div>
+            </div>
+
+            <!-- Contact & Location Badges -->
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <a href="https://wa.me/573022735235" target="_blank" class="flex items-center space-x-2 bg-brandGreen/20 hover:bg-brandGreen/30 border border-brandGreen/50 text-brandGreen font-bold px-3 py-1.5 rounded-full text-sm transition">
+                    <i class="fab fa-whatsapp text-lg"></i>
+                    <span>3022735235</span>
+                </a>
+                <div class="bg-brandPink/20 border border-brandPink/40 text-pink-300 font-semibold px-3 py-1.5 rounded-full text-xs">
+                    <i class="fas fa-location-dot me-1 text-brandYellow"></i> Cali, Valle del Cauca
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-black/40 backdrop-blur-md border-t border-white/10">
+            <div class="max-w-7xl mx-auto px-4 flex justify-center md:justify-start space-x-2 overflow-x-auto py-2">
+                <button id="btnTabNuevo" onclick="switchTab('tab-nuevo')" class="tab-btn active text-sm font-bold px-4 py-2 rounded-lg bg-brandPink text-white transition flex items-center gap-2 shadow-lg">
+                    <i class="fas fa-plus-circle"></i> Nuevo Ingreso
+                </button>
+                <button id="btnTabLista" onclick="switchTab('tab-lista')" class="tab-btn text-sm font-bold px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition flex items-center gap-2">
+                    <i class="fas fa-list-check"></i> Historial y Facturación
+                    <span id="badgeCount" class="bg-brandYellow text-black text-xs px-2 py-0.5 rounded-full font-black">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full no-print">
+
+        <!-- TAB 1: FORMULARIO DE INGRESO -->
+        <section id="tab-nuevo" class="tab-content block">
+            <div class="bg-gray-900/90 border border-gray-800 rounded-2xl p-4 md:p-8 shadow-2xl backdrop-blur-md">
+                
+                <div class="border-b border-gray-800 pb-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-file-signature text-brandPink"></i> Recepción de Equipo
+                        </h2>
+                        <p class="text-gray-400 text-sm">Ingrese la información del cliente y del dispositivo para generar la orden de ingreso.</p>
+                    </div>
+                    <span class="text-xs font-mono bg-brandBlue text-brandCyan border border-brandCyan/30 px-3 py-1 rounded-md self-start font-bold">
+                        Orden N° <span id="nextOrderNum">1001</span>
+                    </span>
+                </div>
+
+                <form id="ingresoForm" onsubmit="guardarRegistro(event)" class="space-y-6">
+                    
+                    <!-- Datos del Cliente -->
+                    <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 space-y-4">
+                        <h3 class="text-md font-bold text-brandYellow flex items-center gap-2 uppercase tracking-wider">
+                            <i class="fas fa-user-tag"></i> Datos del Cliente
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Nombre Completo *</label>
+                                <input type="text" id="clienteNombre" required placeholder="Ej. Carlos Rodríguez" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Teléfono / WhatsApp *</label>
+                                <input type="tel" id="clienteTelefono" required placeholder="Ej. 300 123 4567" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Cédula / NIT</label>
+                                <input type="text" id="clienteDocumento" placeholder="Ej. 1144123456" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink transition">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tipo y Marca del Equipo -->
+                    <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 space-y-4">
+                        <h3 class="text-md font-bold text-brandCyan flex items-center gap-2 uppercase tracking-wider">
+                            <i class="fas fa-laptop-medical"></i> Tipo y Marca del Dispositivo
+                        </h3>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="tipoDispositivo" value="Celular" checked onchange="actualizarMarcasYModelos()" class="peer hidden">
+                                <div class="p-4 rounded-xl border-2 border-gray-700 bg-gray-900 text-center peer-checked:border-brandPink peer-checked:bg-brandPink/10 peer-checked:text-brandPink transition flex flex-col items-center justify-center gap-2">
+                                    <i class="fas fa-mobile-alt text-3xl"></i>
+                                    <span class="font-bold text-sm">Celular / Tablet</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="tipoDispositivo" value="Computador" onchange="actualizarMarcasYModelos()" class="peer hidden">
+                                <div class="p-4 rounded-xl border-2 border-gray-700 bg-gray-900 text-center peer-checked:border-brandCyan peer-checked:bg-brandCyan/10 peer-checked:text-brandCyan transition flex flex-col items-center justify-center gap-2">
+                                    <i class="fas fa-laptop text-3xl"></i>
+                                    <span class="font-bold text-sm">Computador (PC / Laptop)</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Marca *</label>
+                                <select id="marcaSelect" onchange="actualizarModelos()" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink transition">
+                                </select>
+                                <input type="text" id="marcaOtra" placeholder="Escriba la marca" class="hidden w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Modelo *</label>
+                                <select id="modeloSelect" onchange="checkModeloOtro()" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink transition">
+                                </select>
+                                <input type="text" id="modeloOtro" placeholder="Escriba el modelo exacto" class="hidden w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado Físico y Encendido -->
+                    <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 space-y-4">
+                        <h3 class="text-md font-bold text-brandPink flex items-center gap-2 uppercase tracking-wider">
+                            <i class="fas fa-power-off"></i> Estado de Encendido y Diagnóstico
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Estado de encendido *</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="estadoEncendido" value="Prendido" checked class="peer hidden">
+                                        <div class="py-2.5 px-3 rounded-lg border border-gray-700 bg-gray-900 text-center peer-checked:border-green-500 peer-checked:bg-green-500/20 peer-checked:text-green-400 font-bold text-xs transition flex items-center justify-center gap-1">
+                                            <i class="fas fa-check-circle text-green-400"></i> PRENDIDO
+                                        </div>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="estadoEncendido" value="Apagado" class="peer hidden">
+                                        <div class="py-2.5 px-3 rounded-lg border border-gray-700 bg-gray-900 text-center peer-checked:border-red-500 peer-checked:bg-red-500/20 peer-checked:text-red-400 font-bold text-xs transition flex items-center justify-center gap-1">
+                                            <i class="fas fa-times-circle text-red-400"></i> APAGADO
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Estado Físico / Motivo de Ingreso / Fallas *</label>
+                                <textarea id="estadoDetalle" required rows="2" placeholder="Ej. Pantalla fisurada, no da imagen, conector de carga flojo, rayones..." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brandPink transition"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clave / Patrón de Desbloqueo -->
+                    <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 space-y-4">
+                        <h3 class="text-md font-bold text-brandYellow flex items-center gap-2 uppercase tracking-wider">
+                            <i class="fas fa-lock"></i> Seguridad y Claves de Acceso
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Clave / PIN / Contraseña</label>
+                                <input type="text" id="claveTexto" placeholder="Ej. 1234 o Clave de inicio de sesión" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brandPink transition mb-2">
+                                <p class="text-xs text-gray-400">Escriba aquí la contraseña o PIN si el equipo la requiere.</p>
+                            </div>
+
+                            <!-- Patrón 3x3 -->
+                            <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-700 flex flex-col items-center">
+                                <span class="text-xs font-bold text-brandCyan mb-2 uppercase">Patrón Gráfico (Marque los puntos)</span>
+                                
+                                <div class="grid grid-cols-3 gap-3 p-3 bg-gray-950 rounded-2xl border border-gray-800">
+                                    <div onclick="togglePatternDot(1)" id="dot-1" class="pattern-dot">1</div>
+                                    <div onclick="togglePatternDot(2)" id="dot-2" class="pattern-dot">2</div>
+                                    <div onclick="togglePatternDot(3)" id="dot-3" class="pattern-dot">3</div>
+                                    <div onclick="togglePatternDot(4)" id="dot-4" class="pattern-dot">4</div>
+                                    <div onclick="togglePatternDot(5)" id="dot-5" class="pattern-dot">5</div>
+                                    <div onclick="togglePatternDot(6)" id="dot-6" class="pattern-dot">6</div>
+                                    <div onclick="togglePatternDot(7)" id="dot-7" class="pattern-dot">7</div>
+                                    <div onclick="togglePatternDot(8)" id="dot-8" class="pattern-dot">8</div>
+                                    <div onclick="togglePatternDot(9)" id="dot-9" class="pattern-dot">9</div>
+                                </div>
+
+                                <div class="mt-3 flex items-center gap-3 w-full justify-between px-2">
+                                    <span class="text-xs text-gray-300 font-mono">Secuencia: <span id="patronSecuencia" class="text-brandYellow font-bold">Ninguna</span></span>
+                                    <button type="button" onclick="limpiarPatron()" class="text-xs bg-red-600/30 text-red-300 hover:bg-red-600/50 px-2.5 py-1 rounded transition">
+                                        <i class="fas fa-eraser me-1"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón Generar Ingreso -->
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="w-full md:w-auto px-8 py-3.5 bg-gradient-to-r from-brandPink via-purple-600 to-brandCyan hover:opacity-95 text-white font-extrabold text-base rounded-xl shadow-xl shadow-pink-500/20 transform hover:-translate-y-0.5 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-receipt text-lg"></i> Guardar y Generar Orden de Ingreso
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 2: HISTORIAL Y LIQUIDACIÓN -->
+        <section id="tab-lista" class="tab-content hidden">
+            <div class="bg-gray-900/90 border border-gray-800 rounded-2xl p-4 md:p-6 shadow-2xl backdrop-blur-md">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-boxes-stacked text-brandYellow"></i> Historial y Facturación de Cobros
+                        </h2>
+                        <p class="text-gray-400 text-sm">Administre los trabajos ingresados, genere la cuenta de cobro final e imprima recibos.</p>
+                    </div>
+
+                    <!-- Buscador -->
+                    <div class="relative min-w-[280px]">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" id="searchInput" onkeyup="filtrarTabla()" placeholder="Buscar cliente, orden, equipo..." class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-brandYellow">
+                    </div>
+                </div>
+
+                <!-- Tabla de registros -->
+                <div class="overflow-x-auto rounded-xl border border-gray-800">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-950 text-xs text-gray-400 uppercase font-bold border-b border-gray-800">
+                            <tr>
+                                <th class="p-3">N° Orden</th>
+                                <th class="p-3">Fecha</th>
+                                <th class="p-3">Cliente / Teléfono</th>
+                                <th class="p-3">Equipo</th>
+                                <th class="p-3">Detalle Cobro</th>
+                                <th class="p-3">Estado Pago</th>
+                                <th class="p-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCuerpo" class="divide-y divide-gray-800 bg-gray-900/50">
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL FACTURACIÓN Y COBRO (SCREEN INTERFACE) -->
+    <div id="cobroModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 md:p-4 overflow-y-auto no-print">
+        <div class="bg-gray-900 border border-gray-700 text-gray-100 rounded-2xl max-w-2xl w-full p-4 md:p-6 shadow-2xl my-8 relative">
+            
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-cash-register text-brandYellow"></i> Liquidar y Generar Factura de Cobro
+                </h3>
+                <button onclick="cerrarModalCobro()" class="text-gray-400 hover:text-red-400 text-2xl font-bold px-2">&times;</button>
+            </div>
+
+            <form onsubmit="guardarCobroYVerFactura(event)" class="space-y-4">
+                
+                <div class="bg-gray-800/60 p-3 rounded-lg border border-gray-700 text-xs flex justify-between items-center">
+                    <div>
+                        <span class="text-gray-400">Cliente:</span> <strong id="cobroClienteNombre" class="text-white text-sm">--</strong>
+                    </div>
+                    <div>
+                        <span class="text-gray-400">Equipo:</span> <strong id="cobroEquipoInfo" class="text-brandCyan text-sm">--</strong>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Descripción de la Reparación / Servicios Realizados *</label>
+                        <textarea id="cobroDescripcion" required rows="3" placeholder="Ej. Mantenimiento general, cambio de pantalla display, formateo de sistema..." class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-brandPink"></textarea>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Valor Mano de Obra ($)</label>
+                            <input type="number" id="cobroManoObra" value="0" min="0" oninput="calcularTotalesCobro()" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandPink">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Valor Repuestos / Materiales ($)</label>
+                            <input type="number" id="cobroRepuestos" value="0" min="0" oninput="calcularTotalesCobro()" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandPink">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Descuento ($)</label>
+                            <input type="number" id="cobroDescuento" value="0" min="0" oninput="calcularTotalesCobro()" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandPink">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pago y Ajustes -->
+                <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Método de Pago</label>
+                        <select id="cobroMetodoPago" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-white">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Nequi">Nequi</option>
+                            <option value="Daviplata">Daviplata</option>
+                            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                            <option value="Tarjeta Débito/Crédito">Tarjeta Débito/Crédito</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Estado de Pago</label>
+                        <select id="cobroEstadoPago" onchange="calcularTotalesCobro()" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-white">
+                            <option value="Pagado">Pagado Total</option>
+                            <option value="Abonado">Abonado / Parcial</option>
+                            <option value="Pendiente">Pendiente de Pago</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Garantía Ofrecida</label>
+                        <select id="cobroGarantia" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-white">
+                            <option value="30 días">30 Días</option>
+                            <option value="60 días">60 Días</option>
+                            <option value="90 días">90 Días</option>
+                            <option value="Sin garantía">Sin garantía</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Valor Abonado ($)</label>
+                        <input type="number" id="cobroAbono" value="0" min="0" oninput="calcularTotalesCobro()" class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-1">Total Cobro ($)</label>
+                        <div id="cobroTotalMostrar" class="font-mono text-lg font-bold text-brandYellow py-1">$0</div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-1">Saldo Pendiente ($)</label>
+                        <div id="cobroSaldoMostrar" class="font-mono text-lg font-bold text-red-400 py-1">$0</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="cerrarModalCobro()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-lg text-xs">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-gradient-to-r from-brandPink to-purple-600 hover:opacity-90 text-white font-extrabold rounded-lg text-xs shadow-lg flex items-center gap-1">
+                        <i class="fas fa-file-invoice-dollar"></i> Guardar y Generar Factura
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PREVISUALIZACIÓN DE FACTURA (SCREEN VIEW) -->
+    <div id="invoiceModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 md:p-4 overflow-y-auto no-print">
+        <div class="bg-white text-gray-900 rounded-2xl max-w-3xl w-full p-4 md:p-6 shadow-2xl my-8 relative max-h-[95vh] overflow-y-auto">
+            
+            <!-- Controls Header -->
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-print text-brandPink"></i> Previsualización del Documento (A Color)
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <button onclick="imprimirFactura()" class="bg-brandPink hover:bg-pink-700 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 shadow-lg">
+                        <i class="fas fa-print"></i> Imprimir / Guardar PDF
+                    </button>
+                    <button onclick="cerrarModal()" class="text-gray-500 hover:text-red-600 text-2xl font-bold px-2">&times;</button>
+                </div>
+            </div>
+
+            <!-- Screen Preview Copy -->
+            <div id="screenPreviewContent" class="bg-white text-black p-2 md:p-4 border rounded-xl shadow-inner">
+                <!-- Javascript will mirror printable content here for screen preview -->
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ISOLATED PRINT ROOT CONTAINER (FULL COLOR STYLING) -->
+    <div id="printArea">
+        <div style="padding: 12px; background: #ffffff; color: #0f172a; border: 2px solid #e6007e; border-radius: 8px;">
+            
+            <!-- Colorful Header -->
+            <div style="background: linear-gradient(135deg, #0c1527 0%, #13213e 60%, #1e112a 100%); color: #ffffff; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #e6007e; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #ff007f, #00d2ff); color: #ffffff; font-weight: 900; font-size: 20px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 2px solid #ffcc00; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                        DMJ
+                    </div>
+                    <div>
+                        <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #ffffff; letter-spacing: 0.5px;">
+                            DMJ <span style="color: #ffcc00;">SOLUCIONES</span>
+                        </h2>
+                        <p style="font-size: 10px; font-weight: 700; color: #00d2ff; margin: 1px 0 0 0; text-transform: uppercase;">Servicio Técnico Especializado en Celulares y PC</p>
+                        <p style="font-size: 9px; color: #e2e8f0; margin: 1px 0 0 0;">WhatsApp: <strong>3022735235</strong> | Cali, Valle del Cauca</p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span id="p-tipoHeader" style="background-color: #e6007e; color: #ffffff; font-size: 9px; font-weight: 900; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        ORDEN DE INGRESO
+                    </span>
+                    <p style="font-family: monospace; font-weight: 900; font-size: 15px; color: #ffcc00; margin: 5px 0 0 0;">N°: <span id="p-numero">1001</span></p>
+                    <p style="font-size: 9px; color: #cbd5e1; margin: 1px 0 0 0;">Fecha: <span id="p-fecha">--/--/----</span></p>
+                </div>
+            </div>
+
+            <!-- Client & Device Info (Color Cards) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                
+                <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #ffcc00; padding: 8px; border-radius: 6px;">
+                    <p style="font-size: 8px; color: #b45309; font-weight: 800; text-transform: uppercase; margin: 0 0 4px 0;">DATOS DEL CLIENTE</p>
+                    <p style="font-size: 12px; font-weight: 800; color: #0f172a; margin: 0;" id="p-cliente">--</p>
+                    <p style="font-size: 10px; margin: 2px 0 0 0; color: #334155;">Teléfono: <strong id="p-telefono" style="color: #15803d;">--</strong></p>
+                    <p style="font-size: 10px; margin: 1px 0 0 0; color: #334155;">Documento / Cédula: <span id="p-documento">--</span></p>
+                </div>
+
+                <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #00d2ff; padding: 8px; border-radius: 6px;">
+                    <p style="font-size: 8px; color: #0369a1; font-weight: 800; text-transform: uppercase; margin: 0 0 4px 0;">DATOS DEL DISPOSITIVO</p>
+                    <p style="font-size: 12px; font-weight: 800; color: #00d2ff; margin: 0;" id="p-equipo">--</p>
+                    <p style="font-size: 10px; margin: 2px 0 0 0; color: #334155;">Estado Encendido: <strong id="p-estadoEncendido" style="color: #e6007e;">--</strong></p>
+                    <p style="font-size: 10px; margin: 1px 0 0 0; color: #334155;">Clave / PIN Acceso: <strong id="p-clave" style="font-family: monospace; color: #0f172a;">--</strong></p>
+                </div>
+
+            </div>
+
+            <!-- Pattern Grid Display -->
+            <div id="p-patronBox" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="font-size: 9px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin: 0;">Patrón de Desbloqueo Registrado:</p>
+                    <p style="font-family: monospace; font-size: 11px; font-weight: 800; color: #e6007e; margin: 2px 0 0 0;" id="p-patronTexto">--</p>
+                </div>
+                <div id="p-patronGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: #0c1527; padding: 6px; border-radius: 6px; border: 1px solid #ff007f;">
+                    <div class="p-dot" id="pdot-1">1</div>
+                    <div class="p-dot" id="pdot-2">2</div>
+                    <div class="p-dot" id="pdot-3">3</div>
+                    <div class="p-dot" id="pdot-4">4</div>
+                    <div class="p-dot" id="pdot-5">5</div>
+                    <div class="p-dot" id="pdot-6">6</div>
+                    <div class="p-dot" id="pdot-7">7</div>
+                    <div class="p-dot" id="pdot-8">8</div>
+                    <div class="p-dot" id="pdot-9">9</div>
+                </div>
+            </div>
+
+            <!-- Fault details -->
+            <div style="margin-bottom: 10px;">
+                <p style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: #475569; margin: 0 0 3px 0;">Diagnóstico Inicial / Motivo de Ingreso / Estado Físico</p>
+                <div style="background-color: #fff; border: 1px solid #94a3b8; padding: 8px; border-radius: 6px; font-size: 10px; color: #1e293b; min-height: 28px;" id="p-detalles">
+                    --
+                </div>
+            </div>
+
+            <!-- Service & Billing Table (Colorized) -->
+            <div style="margin-bottom: 10px;">
+                <p style="font-size: 9px; font-weight: 800; text-transform: uppercase; color: #0c1527; margin: 0 0 4px 0;">LIQUIDACIÓN DE SERVICIO TÉCNICO Y REPARACIÓN</p>
+                
+                <table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #13213e, #0c1527); color: #ffffff; font-weight: 800;">
+                            <th style="padding: 6px; text-align: left; border-right: 1px solid #334155;">Descripción del Servicio / Repuestos</th>
+                            <th style="padding: 6px; text-align: right; width: 110px;">Valor COP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color: #ffffff;">
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;" id="p-conceptoArreglo">Servicio Técnico y Reparación</td>
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-weight: 700;" id="p-manoObraVal">$0</td>
+                        </tr>
+                        <tr style="background-color: #f8fafc;">
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">Repuestos / Componentes</td>
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-weight: 700;" id="p-repuestosVal">$0</td>
+                        </tr>
+                        <tr id="p-filaDescuento" style="display: none; background-color: #fef2f2;">
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; color: #dc2626; font-weight: 700;">Descuento Especial</td>
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; color: #dc2626; font-weight: 800;" id="p-descuentoVal">-$0</td>
+                        </tr>
+                        <tr style="background-color: #13213e; color: #ffffff; font-weight: 900;">
+                            <td style="padding: 6px; border-right: 1px solid #334155; font-size: 11px;">TOTAL SERVICIO:</td>
+                            <td style="padding: 6px; text-align: right; font-family: monospace; font-size: 12px; color: #ffcc00;" id="p-totalArreglo">$0</td>
+                        </tr>
+                        <tr style="background-color: #f8fafc;">
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; color: #15803d; font-weight: 700;">Valor Abonado:</td>
+                            <td style="padding: 5px 6px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-weight: 800; color: #15803d;" id="p-abonoVal">$0</td>
+                        </tr>
+                        <tr style="background-color: #fff1f2; font-weight: 900;">
+                            <td style="padding: 6px; border-right: 1px solid #fecdd3; color: #be123c; font-size: 11px;">SALDO PENDIENTE:</td>
+                            <td style="padding: 6px; text-align: right; font-family: monospace; font-size: 12px; color: #be123c;" id="p-saldoVal">$0</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Status Badges Grid -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px; margin-top: 6px; border-radius: 6px; font-size: 9px;">
+                    <div><strong>Método Pago:</strong> <span id="p-metodoPago" style="color: #0c1527; font-weight: bold;">--</span></div>
+                    <div><strong>Estado Pago:</strong> <span id="p-estadoPago" style="background-color: #e6007e; color: #ffffff; font-weight: 900; padding: 1px 6px; border-radius: 3px; text-transform: uppercase;">--</span></div>
+                    <div><strong>Garantía:</strong> <span id="p-garantia" style="color: #0d9488; font-weight: bold;">30 Días</span></div>
+                </div>
+            </div>
+
+            <!-- Terms and Signatures -->
+            <div style="border-top: 1px solid #cbd5e1; padding-top: 6px; font-size: 8px; color: #475569;">
+                <p style="margin: 0;">• Transcurridos 30 días calendario, la empresa no se responsabiliza por equipos no retirados.</p>
+                <p style="margin: 1px 0 0 0;">• La garantía cubre exclusivamente la falla corregida. Se anula por humedad, golpes o sellos violados.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 28px; text-align: center; font-size: 9px; font-weight: 800; color: #0f172a;">
+                    <div style="border-top: 1.5px solid #0f172a; padding-top: 3px;">Firma del Cliente</div>
+                    <div style="border-top: 1.5px solid #0f172a; padding-top: 3px;">DMJ Soluciones - Recibido Conforme</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-900 border-2 border-brandPink text-white px-5 py-3 rounded-xl shadow-2xl transition transform translate-y-20 opacity-0 z-50 flex items-center gap-3 no-print">
+        <i class="fas fa-check-circle text-brandYellow text-xl"></i>
+        <span id="toastMsg" class="font-bold text-sm">Operación realizada con éxito</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-950 border-t border-gray-800 py-4 text-center text-xs text-gray-500 no-print">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-2">
+            <p><strong>DMJ SOLUCIONES</strong> &copy; <span id="year"></span> - Cali, Colombia.</p>
+            <p class="text-brandCyan font-medium">Servicio Técnico con Calidad, Confianza y Garantía</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const STORAGE_KEY = 'dmj_soluciones_registros_v2';
+        let registros = [];
+        let patronSeleccionado = [];
+        let registroActualId = null;
+
+        const datosDispositivos = {
+            Celular: {
+                "Samsung": ["Galaxy S23 / S24", "Galaxy A54 / A55", "Galaxy A14 / A15", "Galaxy A34 / A35", "Galaxy Note Series", "Galaxy Z Fold / Flip", "Otro Modelo Samsung"],
+                "Apple (iPhone)": ["iPhone 11", "iPhone 12 / 12 Pro", "iPhone 13 / 13 Pro", "iPhone 14 / 14 Pro", "iPhone 15 / 15 Pro", "iPhone X / XR / XS", "iPad Series", "Otro iPhone/iPad"],
+                "Xiaomi / Redmi": ["Redmi Note 12 / 13", "Redmi 12 / 13C", "Xiaomi 13 / 14", "Poco X5 / X6", "Poco F4 / F5", "Otro Xiaomi"],
+                "Motorola": ["Moto G54 / G84", "Moto G23 / G32", "Edge 30 / 40 / 50", "Moto E Series", "Otro Motorola"],
+                "Huawei": ["P30 / P40 / P50", "Mate Series", "Y Series (Y7, Y9)", "Nova Series", "Otra Marca Huawei"],
+                "Realme / Oppo / Vivo": ["Realme C Series", "Realme Number Series", "Oppo A Series", "Oppo Reno", "Vivo Y Series", "Otro"],
+                "Otra Marca": ["Modelo Personalizado"]
+            },
+            Computador: {
+                "HP": ["HP Pavilion", "HP 14 / 15 Laptop", "HP ProBook / EliteBook", "HP Omen / Victus", "HP All-in-One", "Otro HP"],
+                "Lenovo": ["IdeaPad 3 / 5", "ThinkPad Series", "Legion Gaming", "Yoga Series", "Otro Lenovo"],
+                "ASUS": ["VivoBook Series", "ZenBook", "TUF Gaming", "ROG Strix", "Otro ASUS"],
+                "Acer": ["Aspire 3 / 5 / 7", "Nitro 5 / 16", "Predator", "Swift Series", "Otro Acer"],
+                "Dell": ["Inspiron 14 / 15", "Vostro Series", "Latitude", "Alienware", "Otro Dell"],
+                "Apple (Mac)": ["MacBook Air M1 / M2 / M3", "MacBook Pro 13/14/16", "iMac", "Mac Mini", "Otro Mac"],
+                "MSI / Toshiba / Samsung": ["MSI Gaming", "Toshiba Satellite", "Samsung Book", "Otro PC"],
+                "Otra Marca PC": ["Modelo Personalizado"]
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('year').textContent = new Date().getFullYear();
+            cargarRegistros();
+            actualizarMarcasYModelos();
+            actualizarSiguienteNumeroOrden();
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-brandPink', 'text-white');
+                btn.classList.add('bg-gray-800', 'text-gray-300');
+            });
+
+            if(tabId === 'tab-nuevo') {
+                document.getElementById('btnTabNuevo').classList.add('bg-brandPink', 'text-white');
+            } else if(tabId === 'tab-lista') {
+                document.getElementById('btnTabLista').classList.add('bg-brandPink', 'text-white');
+                renderizarTabla();
+            }
+        }
+
+        function actualizarMarcasYModelos() {
+            const tipo = document.querySelector('input[name="tipoDispositivo"]:checked').value;
+            const marcaSelect = document.getElementById('marcaSelect');
+            marcaSelect.innerHTML = '';
+
+            const marcas = Object.keys(datosDispositivos[tipo]);
+            marcas.forEach(marca => {
+                const opt = document.createElement('option');
+                opt.value = marca;
+                opt.textContent = marca;
+                marcaSelect.appendChild(opt);
+            });
+
+            actualizarModelos();
+        }
+
+        function actualizarModelos() {
+            const tipo = document.querySelector('input[name="tipoDispositivo"]:checked').value;
+            const marca = document.getElementById('marcaSelect').value;
+            const modeloSelect = document.getElementById('modeloSelect');
+            const marcaOtraInput = document.getElementById('marcaOtra');
+
+            if(marca.includes('Otra')) {
+                marcaOtraInput.classList.remove('hidden');
+            } else {
+                marcaOtraInput.classList.add('hidden');
+            }
+
+            modeloSelect.innerHTML = '';
+            const modelos = datosDispositivos[tipo][marca] || ["Otro Modelo"];
+            
+            modelos.forEach(mod => {
+                const opt = document.createElement('option');
+                opt.value = mod;
+                opt.textContent = mod;
+                modeloSelect.appendChild(opt);
+            });
+
+            checkModeloOtro();
+        }
+
+        function checkModeloOtro() {
+            const modelo = document.getElementById('modeloSelect').value;
+            const modeloOtroInput = document.getElementById('modeloOtro');
+            if(modelo.includes('Otro') || modelo.includes('Personalizado')) {
+                modeloOtroInput.classList.remove('hidden');
+            } else {
+                modeloOtroInput.classList.add('hidden');
+            }
+        }
+
+        function togglePatternDot(num) {
+            const dotEl = document.getElementById(`dot-${num}`);
+            const idx = patronSeleccionado.indexOf(num);
+
+            if (idx === -1) {
+                patronSeleccionado.push(num);
+                dotEl.classList.add('selected');
+            } else {
+                patronSeleccionado.splice(idx, 1);
+                dotEl.classList.remove('selected');
+            }
+
+            const textoPatron = patronSeleccionado.length > 0 ? patronSeleccionado.join(' ➔ ') : 'Ninguna';
+            document.getElementById('patronSecuencia').textContent = textoPatron;
+        }
+
+        function limpiarPatron() {
+            patronSeleccionado = [];
+            for(let i = 1; i <= 9; i++) {
+                document.getElementById(`dot-${i}`).classList.remove('selected');
+            }
+            document.getElementById('patronSecuencia').textContent = 'Ninguna';
+        }
+
+        function cargarRegistros() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                registros = raw ? JSON.parse(raw) : [];
+            } catch(e) {
+                registros = [];
+            }
+            document.getElementById('badgeCount').textContent = registros.length;
+        }
+
+        function guardarEnLocalStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+            document.getElementById('badgeCount').textContent = registros.length;
+        }
+
+        function actualizarSiguienteNumeroOrden() {
+            let maxNum = 1000;
+            registros.forEach(r => {
+                if(r.numeroOrden > maxNum) maxNum = r.numeroOrden;
+            });
+            document.getElementById('nextOrderNum').textContent = maxNum + 1;
+        }
+
+        function guardarRegistro(e) {
+            e.preventDefault();
+
+            const tipo = document.querySelector('input[name="tipoDispositivo"]:checked').value;
+            
+            let marca = document.getElementById('marcaSelect').value;
+            if (marca.includes('Otra') && document.getElementById('marcaOtra').value.trim() !== '') {
+                marca = document.getElementById('marcaOtra').value.trim();
+            }
+
+            let modelo = document.getElementById('modeloSelect').value;
+            if ((modelo.includes('Otro') || modelo.includes('Personalizado')) && document.getElementById('modeloOtro').value.trim() !== '') {
+                modelo = document.getElementById('modeloOtro').value.trim();
+            }
+
+            const nextNum = parseInt(document.getElementById('nextOrderNum').textContent);
+
+            const nuevoItem = {
+                id: 'DMJ-' + Date.now(),
+                numeroOrden: nextNum,
+                fechaIngreso: new Date().toLocaleDateString('es-CO') + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                cliente: {
+                    nombre: document.getElementById('clienteNombre').value.trim(),
+                    telefono: document.getElementById('clienteTelefono').value.trim(),
+                    documento: document.getElementById('clienteDocumento').value.trim() || 'N/A'
+                },
+                equipo: {
+                    tipo: tipo,
+                    marca: marca,
+                    modelo: modelo,
+                    estadoEncendido: document.querySelector('input[name="estadoEncendido"]:checked').value,
+                    detalles: document.getElementById('estadoDetalle').value.trim(),
+                    claveTexto: document.getElementById('claveTexto').value.trim() || 'Sin clave',
+                    patron: [...patronSeleccionado]
+                },
+                arreglo: {
+                    descripcion: '',
+                    manoObra: 0,
+                    repuestos: 0,
+                    descuento: 0,
+                    total: 0,
+                    abono: 0,
+                    saldo: 0,
+                    metodoPago: 'Efectivo',
+                    estadoPago: 'Pendiente',
+                    garantia: '30 días'
+                }
+            };
+
+            registros.unshift(nuevoItem);
+            guardarEnLocalStorage();
+            actualizarSiguienteNumeroOrden();
+
+            mostrarToast('¡Orden de ingreso creada correctamente!');
+            
+            document.getElementById('ingresoForm').reset();
+            limpiarPatron();
+            actualizarMarcasYModelos();
+
+            abrirFactura(nuevoItem.id);
+        }
+
+        function renderizarTabla() {
+            const tbody = document.getElementById('tablaCuerpo');
+            tbody.innerHTML = '';
+
+            if(registros.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="p-6 text-center text-gray-500">
+                            No hay equipos ingresados aún.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            registros.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-800/80 transition';
+
+                const badgePago = {
+                    'Pagado': 'bg-green-500/20 text-green-400 border-green-500/30',
+                    'Abonado': 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+                    'Pendiente': 'bg-red-500/20 text-red-400 border-red-500/30'
+                }[item.arreglo.estadoPago] || 'bg-gray-700 text-gray-300';
+
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-brandPink">#${item.numeroOrden}</td>
+                    <td class="p-3 text-xs text-gray-400">${item.fechaIngreso}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-white">${item.cliente.nombre}</div>
+                        <div class="text-xs text-gray-400"><i class="fab fa-whatsapp text-brandGreen"></i> ${item.cliente.telefono}</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="font-semibold text-brandCyan">${item.equipo.tipo}: ${item.equipo.marca}</div>
+                        <div class="text-xs text-gray-300">${item.equipo.modelo}</div>
+                    </td>
+                    <td class="p-3 text-xs">
+                        <div class="truncate max-w-[150px]">${item.arreglo.descripcion || 'Sin liquidar'}</div>
+                        <div class="font-mono text-brandYellow font-bold">$${Number(item.arreglo.total || 0).toLocaleString('es-CO')}</div>
+                    </td>
+                    <td class="p-3">
+                        <span class="text-xs px-2.5 py-1 rounded-full border ${badgePago} font-bold">
+                            ${item.arreglo.estadoPago}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="abrirModalCobro('${item.id}')" title="Liquidar y Cobrar" class="bg-brandPink hover:bg-pink-700 text-white p-2 rounded-lg text-xs font-bold transition">
+                            <i class="fas fa-cash-register me-1"></i> Cobrar
+                        </button>
+                        <button onclick="abrirFactura('${item.id}')" title="Ver / Imprimir Documento" class="bg-brandBlue hover:bg-brandNavy text-brandCyan border border-brandCyan/40 p-2 rounded-lg text-xs transition">
+                            <i class="fas fa-print"></i>
+                        </button>
+                        <button onclick="eliminarRegistro('${item.id}')" title="Eliminar Registro" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 p-2 rounded-lg text-xs transition">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarTabla() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filas = document.querySelectorAll('#tablaCuerpo tr');
+
+            filas.forEach(fila => {
+                const texto = fila.textContent.toLowerCase();
+                fila.style.display = texto.includes(query) ? '' : 'none';
+            });
+        }
+
+        function abrirModalCobro(id) {
+            registroActualId = id;
+            const item = registros.find(r => r.id === id);
+            if(!item) return;
+
+            document.getElementById('cobroClienteNombre').textContent = item.cliente.nombre;
+            document.getElementById('cobroEquipoInfo').textContent = `${item.equipo.marca} ${item.equipo.modelo}`;
+
+            document.getElementById('cobroDescripcion').value = item.arreglo.descripcion || '';
+            document.getElementById('cobroManoObra').value = item.arreglo.manoObra || 0;
+            document.getElementById('cobroRepuestos').value = item.arreglo.repuestos || 0;
+            document.getElementById('cobroDescuento').value = item.arreglo.descuento || 0;
+            document.getElementById('cobroMetodoPago').value = item.arreglo.metodoPago || 'Efectivo';
+            document.getElementById('cobroEstadoPago').value = item.arreglo.estadoPago || 'Pendiente';
+            document.getElementById('cobroGarantia').value = item.arreglo.garantia || '30 días';
+            document.getElementById('cobroAbono').value = item.arreglo.abono || 0;
+
+            calcularTotalesCobro();
+            document.getElementById('cobroModal').classList.remove('hidden');
+        }
+
+        function calcularTotalesCobro() {
+            const manoObra = parseFloat(document.getElementById('cobroManoObra').value) || 0;
+            const repuestos = parseFloat(document.getElementById('cobroRepuestos').value) || 0;
+            const descuento = parseFloat(document.getElementById('cobroDescuento').value) || 0;
+            let abono = parseFloat(document.getElementById('cobroAbono').value) || 0;
+            const estadoPago = document.getElementById('cobroEstadoPago').value;
+
+            const total = Math.max(0, (manoObra + repuestos) - descuento);
+
+            if (estadoPago === 'Pagado') {
+                abono = total;
+                document.getElementById('cobroAbono').value = total;
+            } else if (estadoPago === 'Pendiente') {
+                abono = 0;
+                document.getElementById('cobroAbono').value = 0;
+            }
+
+            const saldo = Math.max(0, total - abono);
+
+            document.getElementById('cobroTotalMostrar').textContent = '$' + total.toLocaleString('es-CO');
+            document.getElementById('cobroSaldoMostrar').textContent = '$' + saldo.toLocaleString('es-CO');
+        }
+
+        function cerrarModalCobro() {
+            document.getElementById('cobroModal').classList.add('hidden');
+        }
+
+        function guardarCobroYVerFactura(e) {
+            e.preventDefault();
+            if(!registroActualId) return;
+
+            const item = registros.find(r => r.id === registroActualId);
+            if(!item) return;
+
+            const manoObra = parseFloat(document.getElementById('cobroManoObra').value) || 0;
+            const repuestos = parseFloat(document.getElementById('cobroRepuestos').value) || 0;
+            const descuento = parseFloat(document.getElementById('cobroDescuento').value) || 0;
+            const abono = parseFloat(document.getElementById('cobroAbono').value) || 0;
+            const total = Math.max(0, (manoObra + repuestos) - descuento);
+            const saldo = Math.max(0, total - abono);
+
+            item.arreglo = {
+                descripcion: document.getElementById('cobroDescripcion').value.trim(),
+                manoObra: manoObra,
+                repuestos: repuestos,
+                descuento: descuento,
+                total: total,
+                abono: abono,
+                saldo: saldo,
+                metodoPago: document.getElementById('cobroMetodoPago').value,
+                estadoPago: document.getElementById('cobroEstadoPago').value,
+                garantia: document.getElementById('cobroGarantia').value
+            };
+
+            guardarEnLocalStorage();
+            cerrarModalCobro();
+            mostrarToast('Factura generada exitosamente');
+            renderizarTabla();
+
+            abrirFactura(registroActualId);
+        }
+
+        function abrirFactura(id) {
+            registroActualId = id;
+            const item = registros.find(r => r.id === id);
+            if(!item) return;
+
+            // Fill Printable Isolated Template
+            document.getElementById('p-numero').textContent = item.numeroOrden;
+            document.getElementById('p-fecha').textContent = item.fechaIngreso;
+            document.getElementById('p-cliente').textContent = item.cliente.nombre;
+            document.getElementById('p-telefono').textContent = item.cliente.telefono;
+            document.getElementById('p-documento').textContent = item.cliente.documento;
+
+            document.getElementById('p-equipo').textContent = `${item.equipo.tipo} ${item.equipo.marca} ${item.equipo.modelo}`;
+            document.getElementById('p-estadoEncendido').textContent = item.equipo.estadoEncendido;
+            document.getElementById('p-clave').textContent = item.equipo.claveTexto;
+            document.getElementById('p-detalles').textContent = item.equipo.detalles;
+
+            // Pattern Rendering for Print Template
+            const patronBox = document.getElementById('p-patronBox');
+            if (item.equipo.patron && item.equipo.patron.length > 0) {
+                patronBox.style.display = 'flex';
+                document.getElementById('p-patronTexto').textContent = item.equipo.patron.join(' ➔ ');
+                
+                for(let i = 1; i <= 9; i++) {
+                    const miniDot = document.getElementById(`pdot-${i}`);
+                    if(item.equipo.patron.includes(i)) {
+                        miniDot.className = "p-dot selected";
+                    } else {
+                        miniDot.className = "p-dot";
+                    }
+                }
+            } else {
+                patronBox.style.display = 'none';
+            }
+
+            // Fill Repair Billing Info for Print Template
+            const arr = item.arreglo || {};
+            document.getElementById('p-conceptoArreglo').textContent = arr.descripcion || 'Servicio Técnico / Revisión Inicial';
+            document.getElementById('p-manoObraVal').textContent = '$' + Number(arr.manoObra || 0).toLocaleString('es-CO');
+            document.getElementById('p-repuestosVal').textContent = '$' + Number(arr.repuestos || 0).toLocaleString('es-CO');
+
+            if(arr.descuento && arr.descuento > 0) {
+                document.getElementById('p-filaDescuento').style.display = 'table-row';
+                document.getElementById('p-descuentoVal').textContent = '-$' + Number(arr.descuento).toLocaleString('es-CO');
+            } else {
+                document.getElementById('p-filaDescuento').style.display = 'none';
+            }
+
+            document.getElementById('p-totalArreglo').textContent = '$' + Number(arr.total || 0).toLocaleString('es-CO');
+            document.getElementById('p-abonoVal').textContent = '$' + Number(arr.abono || 0).toLocaleString('es-CO');
+            document.getElementById('p-saldoVal').textContent = '$' + Number(arr.saldo || 0).toLocaleString('es-CO');
+
+            document.getElementById('p-metodoPago').textContent = arr.metodoPago || 'Efectivo';
+            
+            // Color Badge for Print Payment Status
+            const pEstado = document.getElementById('p-estadoPago');
+            pEstado.textContent = arr.estadoPago || 'Pendiente';
+            if (arr.estadoPago === 'Pagado') {
+                pEstado.style.backgroundColor = '#16a34a';
+            } else if (arr.estadoPago === 'Abonado') {
+                pEstado.style.backgroundColor = '#ca8a04';
+            } else {
+                pEstado.style.backgroundColor = '#dc2626';
+            }
+
+            document.getElementById('p-garantia').textContent = arr.garantia || '30 Días';
+
+            if(arr.total > 0) {
+                document.getElementById('p-tipoHeader').textContent = 'FACTURA DE COBRO Y SERVICIO';
+            } else {
+                document.getElementById('p-tipoHeader').textContent = 'ORDEN DE INGRESO';
+            }
+
+            // Sync screen modal view
+            document.getElementById('screenPreviewContent').innerHTML = document.getElementById('printArea').innerHTML;
+
+            document.getElementById('invoiceModal').classList.remove('hidden');
+        }
+
+        function cerrarModal() {
+            document.getElementById('invoiceModal').classList.add('hidden');
+        }
+
+        function imprimirFactura() {
+            window.print();
+        }
+
+        function eliminarRegistro(id) {
+            if(confirm('¿Desea borrar este registro del sistema?')) {
+                registros = registros.filter(r => r.id !== id);
+                guardarEnLocalStorage();
+                renderizarTabla();
+                mostrarToast('Registro eliminado');
+            }
+        }
+
+        function mostrarToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
